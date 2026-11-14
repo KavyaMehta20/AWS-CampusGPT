@@ -1,0 +1,32 @@
+[
+  {
+    "event": "Fall Semester Classes Begin",
+    "date": "August 28, 2026",
+    "term": "Fall 2026",
+    "notes": "First day of academic instruction"
+  },
+  {
+    "event": "Add/Drop Deadline",
+    "date": "September 8, 2026",
+    "term": "Fall 2026",
+    "notes": "Last day to add courses or drop without a W grade at 11:59 PM"
+  },
+  {
+    "event": "Midterm Examination Period",
+    "date": "October 16 - October 20, 2026",
+    "term": "Fall 2026",
+    "notes": "Regular class schedule suspended for some departments"
+  },
+  {
+    "event": "Course Withdrawal Deadline",
+    "date": "November 6, 2026",
+    "term": "Fall 2026",
+    "notes": "Last day to withdraw with a W grade"
+  },
+  {
+    "event": "Final Examinations",
+    "date": "December 11 - December 16, 2026",
+    "term": "Fall 2026",
+    "notes": "Official semester examination period"
+  }
+]

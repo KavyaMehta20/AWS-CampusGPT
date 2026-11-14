@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  CampusGPT - Serverless AI University Assistant
+  Deploys FastAPI on AWS Lambda, HTTP API Gateway, S3 Bucket for vector storage,
+  and least-privilege IAM access to AWS Secrets Manager.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+    Runtime: python3.11
+    Environment:
+      Variables:
+        VECTOR_STORE: faiss
+        UNIVERSITY_NAME: RIT Dubai
+        GEMINI_MODEL: gemini-2.5-flash
+        GEMINI_EMBEDDING_MODEL: gemini-embedding-001
+        CHUNKING_STRATEGY: overlapping
+        CHUNK_SIZE: 500
+        CHUNK_OVERLAP: 50
+        TOP_K_CANDIDATES: 20
+        FINAL_K: 5
+        MIN_RELEVANCE: 0.25
+        RERANKER: lexical
+        TEMPERATURE: 0.2
+        MAX_QUESTION_CHARS: 500
+        ENABLE_MCP: false
+        INCLUDE_TRACE: true
+        ALLOWED_ORIGINS: "*"
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # 1. S3 Storage Bucket for FAISS Vector Index and Document Artifacts
+  # ---------------------------------------------------------------------------
+  KnowledgeBaseBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "campusgpt-knowledge-${AWS::AccountId}-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ---------------------------------------------------------------------------
+  # 2. HTTP API Gateway (Low latency, modern serverless API)
+  # ---------------------------------------------------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+
+  # ---------------------------------------------------------------------------
+  # 3. CampusGPT Backend Lambda Function
+  # ---------------------------------------------------------------------------
+  CampusGptFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../
+      Handler: deploy.aws.lambda_handler.handler
+      Description: CampusGPT FastAPI backend wrapped with Mangum
+      Policies:
+        # Least privilege: Read-only access to specific Secrets Manager secret
+        - Statement:
+            - Sid: SecretsManagerReadAccess
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:campusgpt/*"
+        # Least privilege: Read access to Knowledge Base S3 bucket
+        - Statement:
+            - Sid: S3BucketReadAccess
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:ListBucket
+              Resource:
+                - !Sub "${KnowledgeBaseBucket.Arn}"
+                - !Sub "${KnowledgeBaseBucket.Arn}/*"
+      Events:
+        ApiRoot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+        ApiHome:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /
+            Method: ANY
+
+Outputs:
+  HttpApiUrl:
+    Description: "Public URL for CampusGPT HTTP API Gateway"
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  KnowledgeBucketName:
+    Description: "S3 Bucket storing FAISS index"
+    Value: !Ref KnowledgeBaseBucket

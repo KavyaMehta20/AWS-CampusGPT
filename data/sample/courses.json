@@ -1,0 +1,30 @@
+[
+  {
+    "course_code": "CS 101",
+    "title": "Introduction to Computer Science",
+    "credits": 4,
+    "prerequisites": "None",
+    "description": "Fundamental concepts of programming and problem solving in Python. Laboratory included."
+  },
+  {
+    "course_code": "CS 201",
+    "title": "Data Structures & Algorithms",
+    "credits": 4,
+    "prerequisites": "CS 101 with minimum grade C",
+    "description": "Design and analysis of basic data structures: lists, stacks, queues, trees, graphs, and hash tables."
+  },
+  {
+    "course_code": "MATH 150",
+    "title": "Discrete Mathematics",
+    "credits": 3,
+    "prerequisites": "High school algebra",
+    "description": "Sets, logic, proofs, combinatorics, relations, functions, and graph theory fundamentals."
+  },
+  {
+    "course_code": "WRIT 101",
+    "title": "College Writing Seminar",
+    "credits": 3,
+    "prerequisites": "None",
+    "description": "Intensive practice in academic writing, critical reading, argumentation, and research synthesis."
+  }
+]

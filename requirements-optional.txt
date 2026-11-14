@@ -1,0 +1,10 @@
+# CampusGPT Optional / Advanced Dependencies
+# These are optional packages for advanced experiments (e.g. cross-encoder reranking, FAISS on Linux/Lambda)
+# Install with: pip install -r requirements-optional.txt
+
+# In-memory FAISS vector store (CPU)
+faiss-cpu>=1.8.0
+
+# Neural Cross-Encoder Reranker (loads PyTorch & sentence-transformers)
+sentence-transformers>=3.0.0
+torch>=2.2.0

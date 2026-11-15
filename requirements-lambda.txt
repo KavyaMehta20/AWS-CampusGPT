@@ -1,0 +1,36 @@
+# CampusGPT Lambda-Specific Requirements
+# Used by SAM build when packaging for AWS Lambda (Linux x86_64)
+# Install with: pip install -r requirements-lambda.txt
+#
+# Key differences from requirements.txt:
+#   - Includes faiss-cpu (Lambda vector store backend)
+#   - Excludes chromadb (requires SQLite, not available in Lambda /tmp)
+#   - Excludes pytest, sentence-transformers, torch (not needed at runtime)
+
+# Web Framework & API Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.8.0
+pydantic-settings>=2.4.0
+python-dotenv>=1.0.1
+pyyaml>=6.0.1
+
+# Official Google GenAI SDK
+google-genai>=1.0.0
+
+# Document Ingestion (PDF, DOCX)
+pypdf>=4.3.0
+python-docx>=1.1.2
+
+# FAISS Vector Store (Lambda backend - replaces ChromaDB)
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+
+# MCP (FastMCP supported in mcp<2)
+mcp>=1.2.0,<2.0.0
+
+# Serverless AWS Lambda Adapter
+mangum>=0.17.0
+
+# AWS SDK for fetching secrets
+boto3>=1.35.0

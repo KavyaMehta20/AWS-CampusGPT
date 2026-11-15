@@ -1,64 +1,53 @@
-# AWS Deployment Guide for Presenter & Students (Slide 16)
+# CampusGPT — AWS Deployment Guide
 
-> **IMPORTANT NOTICE:** This is a prepared, presenter-led demo template. Do not run deployments without an authorized AWS account and cost budget alerts enabled.
+> **Quick reference for the presenting team.** Full step-by-step guide is in the artifact or the Architecture PDF.
 
----
+## What gets deployed
 
-## Architecture Overview
-- **Compute:** AWS Lambda running Python 3.11 with FastAPI wrapped in **Mangum**.
-- **API Routing:** Amazon API Gateway (HTTP API).
-- **Secrets Management:** `GEMINI_API_KEY` stored in **AWS Secrets Manager** (fetched once at cold start; never exposed in environment variables or code).
-- **Vector Search:** In-memory **FAISS** index (`vectorstore/faiss_index.bin`) downloaded into Lambda's ephemeral `/tmp` storage. *(Note: ChromaDB is not used on Lambda because Chroma requires a persistent filesystem and local SQLite database).*
+| AWS Resource | Purpose |
+|---|---|
+| **Lambda Function** | Runs the FastAPI backend (Mangum wrapper) |
+| **HTTP API Gateway** | Public HTTPS endpoint → routes to Lambda |
+| **S3 Bucket** | Stores the FAISS vector index |
+| **Secrets Manager** | Holds the Gemini API key (never in code) |
+| **CloudFormation Stack** | Manages all resources as one unit |
 
----
+## Deployment checklist
 
-## 6-Step Presenter Demo
+- [ ] AWS CLI installed and configured (`aws configure`)
+- [ ] SAM CLI installed
+- [ ] Docker Desktop running (for `--use-container` builds)
+- [ ] Gemini key in Secrets Manager (`campusgpt/gemini_api_key`)
+- [ ] FAISS index built (`python scripts/build_faiss_index.py`)
+- [ ] `sam build --template deploy/aws/template.yaml --use-container`
+- [ ] `sam deploy --template deploy/aws/template.yaml --guided`
+- [ ] FAISS index files uploaded to S3
+- [ ] Live endpoint tested
 
-### Step 1: Inspect the AWS SAM Template
-Open and walk students through [template.yaml](template.yaml):
-- Show the least-privilege IAM policies.
-- Explain why secrets are **not** hardcoded in template environment variables.
+## Quick commands
 
-### Step 2: Build the FAISS Index
-Before packaging, create the lightweight FAISS index:
-```bash
-python scripts/build_faiss_index.py
-```
+```powershell
+# From repo root
+sam build --template deploy\aws\template.yaml --use-container
+sam deploy
 
-### Step 3: Configure Gemini API Key in Secrets Manager
-Create the secret in your target AWS region:
-```bash
-aws secretsmanager create-secret \
-    --name campusgpt/gemini_api_key \
-    --secret-string '{"GEMINI_API_KEY":"YOUR_ACTUAL_GEMINI_KEY"}' \
-    --region us-east-1
-```
+# Upload FAISS index after building
+aws s3 cp vectorstore\faiss_index.bin s3://<BUCKET>/vectorstore/faiss_index.bin
+aws s3 cp vectorstore\faiss_meta.json s3://<BUCKET>/vectorstore/faiss_meta.json
 
-### Step 4: Build and Package with AWS SAM
-```bash
-sam build --use-container
-```
+# Test
+Invoke-RestMethod -Uri "https://<ID>.execute-api.us-east-1.amazonaws.com/health" -Method GET
 
-### Step 5: Deploy the Stack
-```bash
-sam deploy --guided
-```
-Follow the interactive prompts (Stack Name: `campusgpt-stack`, Region: `us-east-1`, Confirm changes: `Y`).
-Copy the resulting `HttpApiUrl` from the terminal output (e.g. `https://xyz123.execute-api.us-east-1.amazonaws.com`).
-
-### Step 6: Test with Ready-to-Paste cURL
-Test your deployed live API Gateway:
-```bash
-curl -X POST "https://<YOUR_API_GATEWAY_URL>/api/chat" \
-     -H "Content-Type: application/json" \
-     -d '{"question": "What are the 11 courses in the common business core?"}'
-```
-
----
-
-## Clean-Up Instructions (Prevent Accidental AWS Charges)
-To tear down all resources when the workshop finishes:
-```bash
+# Teardown (after demo)
 sam delete --stack-name campusgpt-stack
 aws secretsmanager delete-secret --secret-id campusgpt/gemini_api_key --force-delete-without-recovery
 ```
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `template.yaml` | AWS SAM/CloudFormation template |
+| `lambda_handler.py` | Mangum wrapper + cold-start secret/FAISS loading |
+| `../../requirements-lambda.txt` | Lambda-specific deps (faiss-cpu, no chromadb) |
+| `../../scripts/build_faiss_index.py` | Builds FAISS index from documents |

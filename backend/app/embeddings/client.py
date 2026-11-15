@@ -22,8 +22,8 @@ import numpy as np
 
 from backend.app.config import settings
 
-# In-memory and disk cache directory
-CACHE_DIR = Path(".cache/embeddings")
+# In-memory and disk cache directory (use /tmp when in Lambda)
+CACHE_DIR = Path("/tmp/.cache/embeddings") if os.environ.get("AWS_LAMBDA_FUNCTION_NAME") else Path(".cache/embeddings")
 
 
 def compute_text_hash(text: str, model_name: str) -> str:
